@@ -8,10 +8,10 @@
 
 ## 运行示例
 
-1. 参数帮助
-`./COM`
-![img1.png](image/img1.png)
+1. 参数帮助 `./COM`
 
-2. 输入设备输出UTF8 终端输出GBK
-`./COM -p COM8 -b 115200 -o GBK`
-![img2.png](image/img2.png)
+    ![img1.png](image/img1.png)
+
+2. 输入设备输出UTF8 终端输出GBK `./COM -p COM8 -b 115200 -o GBK`
+
+    ![img2.png](image/img2.png)
