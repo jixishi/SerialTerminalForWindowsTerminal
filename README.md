@@ -15,3 +15,13 @@
 2. 输入设备输出UTF8 终端输出GBK `./COM -p COM8 -b 115200 -o GBK`
 
     ![img2.png](image/img2.png)
+3. 彩色终端输出
+
+   ![img3.png](image/img3.png)
+
+4. Hex接收 `./COM -p COM8 -b 115200 -i hex`
+   
+   ![img4.png](image/img4.png)
+5. Hex发送 `./COM -p COM8 -b 115200`
+
+   ![img5.png](image/img5.png)
