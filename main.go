@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"github.com/zimolab/charsetconv"
@@ -13,33 +14,32 @@ import (
 )
 
 type Config struct {
-	logPath  string
-	port     string
-	endstr   string
-	codein   string
-	codeout  string
-	baud     int
-	prity    int
-	stopbits int
-	databits int
-	logFlag  bool
+	enableLog   bool
+	logFilePath string
+	portName    string
+	endStr      string
+	inputCode   string
+	outputCode  string
+	baudRate    int
+	parityBit   int
+	stopBits    int
+	dataBits    int
 }
-type Cmd struct {
-	name string
-	des  string
-	call func()
+type Command struct {
+	name        string
+	description string
+	function    func()
 }
 
 var (
-	conf Config
-	cmds []Cmd
-	port serial.Port
-	err  error
-
-	args []string
+	config     Config
+	commands   []Command
+	serialPort serial.Port
+	err        error
+	args       []string
 )
 
-func CheckPort() {
+func checkPortAvailability() {
 	ports, err := serial.GetPortsList()
 	if err != nil {
 		log.Fatal(err)
@@ -52,14 +52,14 @@ func CheckPort() {
 		fmt.Printf(" %v", port)
 	}
 }
-func usage() {
-	CheckPort()
+func printUsage() {
+	checkPortAvailability()
 	fmt.Printf("\n参数帮助:\n")
 
-	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "p", "port", "", "连接的串口(/dev/ttyUSB0、COMx)", "")
-	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "b", "baud", 115200, "波特率", 115200)
-	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "s", "stop", 1, "停止位", 1)
+	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "p", "portName", "", "连接的串口(/dev/ttyUSB0、COMx)", "")
+	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "b", "baudRate", 115200, "波特率", 115200)
 	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "d", "data", 8, "数据位", 8)
+	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "s", "stop", 0, "停止位停止位(0: 1停止 1:1.5停止 2:2停止)", 0)
 	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "o", "out", "UTF-8", "输出编码", "UTF-8")
 	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "i", "in", "UTF-8", "输入编码", "UTF-8")
 	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "e", "end", "\n", "终端换行符", "\\n")
@@ -69,55 +69,69 @@ func usage() {
 }
 func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile | log.Lmsgprefix)
-	flag.BoolVar(&conf.logFlag, "log", false, "是否启用日志保存")
-	flag.BoolVar(&conf.logFlag, "l", false, "")
+	flag.BoolVar(&config.enableLog, "log", false, "是否启用日志保存")
+	flag.BoolVar(&config.enableLog, "l", false, "")
 
-	flag.StringVar(&conf.logPath, "Path", "./Log.txt", "日志保存路径")
-	flag.StringVar(&conf.logPath, "P", "./Log.txt", "")
+	flag.StringVar(&config.logFilePath, "Path", "./Log.txt", "日志保存路径")
+	flag.StringVar(&config.logFilePath, "P", "./Log.txt", "")
 
-	flag.StringVar(&conf.port, "port", "", "连接的串口\t(/dev/ttyUSB0、COMx)")
-	flag.StringVar(&conf.port, "p", "", "")
+	flag.StringVar(&config.portName, "portName", "", "连接的串口\t(/dev/ttyUSB0、COMx)")
+	flag.StringVar(&config.portName, "p", "", "")
 
-	flag.StringVar(&conf.endstr, "end", "\n", "终端换行符")
-	flag.StringVar(&conf.endstr, "e", "\n", "")
+	flag.StringVar(&config.endStr, "end", "\n", "终端换行符")
+	flag.StringVar(&config.endStr, "e", "\n", "")
 
-	flag.IntVar(&conf.baud, "baud", 115200, "波特率")
-	flag.IntVar(&conf.baud, "b", 115200, "")
+	flag.IntVar(&config.baudRate, "baudRate", 115200, "波特率")
+	flag.IntVar(&config.baudRate, "b", 115200, "")
 
-	flag.IntVar(&conf.prity, "verify", 0, "奇偶校验(0:无校验、1:奇校验、2:偶校验、3:1校验、4:0校验)")
-	flag.IntVar(&conf.prity, "v", 0, "")
+	flag.IntVar(&config.parityBit, "verify", 0, "奇偶校验(0:无校验 1:奇校验 2:偶校验 3:1校验 4:0校验)")
+	flag.IntVar(&config.parityBit, "v", 0, "")
 
-	flag.IntVar(&conf.stopbits, "stop", 1, "停止位")
-	flag.IntVar(&conf.stopbits, "s", 1, "")
+	flag.IntVar(&config.stopBits, "stop", 0, "停止位(0: 1停止 1:1.5停止 2:2停止)")
+	flag.IntVar(&config.stopBits, "s", 0, "")
 
-	flag.IntVar(&conf.databits, "data", 8, "数据位")
-	flag.IntVar(&conf.databits, "d", 8, "")
+	flag.IntVar(&config.dataBits, "data", 8, "数据位")
+	flag.IntVar(&config.dataBits, "d", 8, "")
 
-	flag.StringVar(&conf.codeout, "out", "UTF-8", "输出编码")
-	flag.StringVar(&conf.codeout, "o", "UTF-8", "")
+	flag.StringVar(&config.outputCode, "out", "UTF-8", "输出编码")
+	flag.StringVar(&config.outputCode, "o", "UTF-8", "")
 
-	flag.StringVar(&conf.codein, "in", "UTF-8", "输入编码")
-	flag.StringVar(&conf.codein, "i", "UTF-8", "")
+	flag.StringVar(&config.inputCode, "in", "UTF-8", "输入编码")
+	flag.StringVar(&config.inputCode, "i", "UTF-8", "")
 	cmdinit()
 }
 func cmdhelp() {
 	var page = 0
 	fmt.Printf(">-------Help(%v)-------<\n", page)
-	for i := 0; i < len(cmds); i++ {
-		output(conf.codeout, fmt.Sprintf(" %-10v --%v\n", cmds[i].name, cmds[i].des))
+	for i := 0; i < len(commands); i++ {
+		strout(config.outputCode, fmt.Sprintf(" %-10v --%v\n", commands[i].name, commands[i].description))
 	}
 }
 func cmdexit() {
 	os.Exit(0)
 }
 func cmdargs() {
-	fmt.Printf(">-------Args()-------<\n")
-	fmt.Printf("%q\n", args)
+	fmt.Printf(">-------Args(%v)-------<\n", len(args)-1)
+	fmt.Printf("%q\n", args[1:])
+}
+func cmdhex() {
+	fmt.Printf(">-----Hex Send-----<\n")
+	fmt.Printf("%q\n", args[1:])
+	s := strings.Join(args[1:], "")
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = serialPort.Write(b)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 func cmdinit() {
-	cmds = append(cmds, Cmd{name: ".help", des: "帮助信息", call: cmdhelp})
-	cmds = append(cmds, Cmd{name: ".args", des: "参数信息", call: cmdargs})
-	cmds = append(cmds, Cmd{name: ".exit", des: "退出终端", call: cmdexit})
+	commands = append(commands, Command{name: ".help", description: "帮助信息", function: cmdhelp})
+	commands = append(commands, Command{name: ".args", description: "参数信息", function: cmdargs})
+	commands = append(commands, Command{name: ".hex", description: "发送Hex", function: cmdhex})
+	commands = append(commands, Command{name: ".exit", description: "退出终端", function: cmdexit})
 }
 func input() {
 	input := bufio.NewScanner(os.Stdin)
@@ -125,66 +139,77 @@ func input() {
 	for {
 		input.Scan()
 		args = strings.Split(input.Text(), " ")
-		for _, cmd := range cmds {
+		for _, cmd := range commands {
 			if strings.Compare(strings.TrimSpace(args[0]), cmd.name) == 0 {
-				cmd.call()
+				cmd.function()
 				ok = true
 			}
 		}
 		if !ok {
-			_, err := port.Write(input.Bytes())
+			_, err := serialPort.Write(input.Bytes())
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = io.WriteString(port, conf.endstr)
+			_, err = io.WriteString(serialPort, config.endStr)
+			//_, err = io.Copy(portName, os.Stdin)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 }
-func output(cs, str string) {
-	charsetconv.EncodeWith(strings.NewReader(str), os.Stdout, charsetconv.Charset(cs), false)
-}
-func main() {
-	flag.Parse()
-	if conf.port == "" {
-		fmt.Println("端口未指定")
-		usage()
-		os.Exit(0)
-	}
-	mode := &serial.Mode{
-		BaudRate: conf.baud,
-		StopBits: serial.StopBits(conf.stopbits),
-		DataBits: conf.databits,
-		Parity:   serial.Parity(conf.prity),
-	}
-	port, err = serial.Open(conf.port, mode)
+func strout(cs, str string) {
+	err = charsetconv.EncodeWith(strings.NewReader(str), os.Stdout, charsetconv.Charset(cs), false)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer port.Close()
+}
+func output(out io.Writer) {
+	if strings.Compare(config.inputCode, "hex") == 0 {
+		_, err = io.Copy(hex.NewEncoder(out), serialPort)
+	} else {
+		err = charsetconv.ConvertWith(serialPort, charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+func main() {
+	flag.Parse()
+	if config.portName == "" {
+		fmt.Println("端口未指定")
+		printUsage()
+		os.Exit(0)
+	}
+	mode := &serial.Mode{
+		BaudRate: config.baudRate,
+		StopBits: serial.StopBits(config.stopBits),
+		DataBits: config.dataBits,
+		Parity:   serial.Parity(config.parityBit),
+	}
+	serialPort, err = serial.Open(config.portName, mode)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func(port serial.Port) {
+		err := port.Close()
+		if err != nil {
+
+		}
+	}(serialPort)
 	go input()
-	if conf.logFlag {
-		f, err := os.OpenFile(conf.logPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	if config.enableLog {
+		f, err := os.OpenFile(config.logFilePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
 		out := io.MultiWriter(os.Stdout, f)
 		for {
-			err = charsetconv.ConvertWith(port, charsetconv.Charset(conf.codein), out, charsetconv.Charset(conf.codeout), false)
-			//_, err = io.Copy(out, port)
-			if err != nil {
-				log.Fatal(err)
-			}
+			output(out)
 		}
 	} else {
 		for {
-			err = charsetconv.ConvertWith(port, charsetconv.Charset(conf.codein), os.Stdout, charsetconv.Charset(conf.codeout), false)
-			//_, err := io.Copy(os.Stdout, port)
-			if err != nil {
-				log.Fatal(err)
-			}
+			output(os.Stdout)
 		}
 	}
 }
