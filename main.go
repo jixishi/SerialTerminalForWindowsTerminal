@@ -56,8 +56,8 @@ func printUsage() {
 	checkPortAvailability()
 	fmt.Printf("\n参数帮助:\n")
 
-	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "p", "portName", "", "连接的串口(/dev/ttyUSB0、COMx)", "")
-	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "b", "baudRate", 115200, "波特率", 115200)
+	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "p", "port", "", "连接的串口(/dev/ttyUSB0、COMx)", "")
+	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "b", "baud", 115200, "波特率", 115200)
 	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "d", "data", 8, "数据位", 8)
 	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "s", "stop", 0, "停止位停止位(0: 1停止 1:1.5停止 2:2停止)", 0)
 	fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", "o", "out", "UTF-8", "输出编码", "UTF-8")
@@ -138,6 +138,7 @@ func input() {
 	var ok = false
 	for {
 		input.Scan()
+		ok = false
 		args = strings.Split(input.Text(), " ")
 		for _, cmd := range commands {
 			if strings.Compare(strings.TrimSpace(args[0]), cmd.name) == 0 {
