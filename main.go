@@ -13,8 +13,6 @@ import (
 )
 
 var (
-	config     Config
-	commands   []Command
 	serialPort serial.Port
 	err        error
 	args       []string

@@ -14,6 +14,8 @@ type Command struct {
 	function    func()
 }
 
+var commands []Command
+
 func cmdhelp() {
 	var page = 0
 	fmt.Printf(">-------Help(%v)-------<\n", page)

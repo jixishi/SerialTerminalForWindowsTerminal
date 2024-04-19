@@ -12,3 +12,5 @@ type Config struct {
 	logFilePath string
 	parityBit   int
 }
+
+var config Config
