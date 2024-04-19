@@ -1,10 +1,19 @@
 # SerialTerminalForWindowsTerminal
-在编写这个项目之前在windows Terminal中对串口设备的支持不是很棒，
+在开始这个项目之前，我发现Windows Terminal对串口设备的支持并不理想。
 
-用过一段时间的
-[SerialPortForWindowsTerminal](https://github.com/Zhou-zhi-peng/SerialPortForWindowsTerminal/)
-项目。
-此项目没有编码转换能力在使用过程中有乱码的问题，并且作者截至目前并没有进行后续支持，于是我便编写了此项目
+我试用了一段时间[Zhou-zhi-peng的SerialPortForWindowsTerminal](https://github.com/Zhou-zhi-peng/SerialPortForWindowsTerminal/)项目。
+
+然而，这个项目存在着编码转换的问题，导致数据显示乱码，并且作者目前并没有进行后续支持。因此，我决定创建了这个项目。
+
+## 功能进展
+* [x] Hex接收发送(大写hex与原文同显)
+* [x] 双向编码转换
+* [x] 活动端口探测
+* [x] 数据日志保存
+* [ ] 自动断帧设置
+* [ ] 文件接收发送
+* [ ] UDP数据转发
+* [ ] TCP数据转发
 
 ## 运行示例
 
