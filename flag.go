@@ -49,7 +49,6 @@ const (
 	stringVal
 	intVal
 	boolVal
-	floatVal
 )
 
 func printUsage(ports []string) {
@@ -79,6 +78,8 @@ func flagprint(f Flag) {
 		fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", f.sStr, f.lStr, f.dv.int, f.help, f.dv.int)
 	case boolVal:
 		fmt.Printf("\t-%v -%v %T \n\t  %v\t默认值:%v\n", f.sStr, f.lStr, f.dv.bool, f.help, f.dv.bool)
+	default:
+		panic("unhandled default case")
 	}
 }
 func flagInit(f *Flag) {
