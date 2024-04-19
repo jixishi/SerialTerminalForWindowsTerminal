@@ -18,6 +18,13 @@ var (
 	args       []string
 )
 
+var (
+	in   io.Reader = os.Stdin
+	out  io.Writer = os.Stdout
+	ins            = []io.Reader{os.Stdin}
+	outs           = []io.Writer{os.Stdout}
+)
+
 func checkPortAvailability(name string) ([]string, error) {
 	ports, err := serial.GetPortsList()
 	if err != nil {
@@ -45,8 +52,8 @@ func init() {
 	cmdinit()
 }
 
-func input() {
-	input := bufio.NewScanner(os.Stdin)
+func input(in io.Reader) {
+	input := bufio.NewScanner(in)
 	var ok = false
 	for input.Scan() {
 		ok = false
@@ -74,8 +81,8 @@ func input() {
 	}
 }
 
-func strout(cs, str string) {
-	err = charsetconv.EncodeWith(strings.NewReader(str), os.Stdout, charsetconv.Charset(cs), false)
+func strout(out io.Writer, cs, str string) {
+	err = charsetconv.EncodeWith(strings.NewReader(str), out, charsetconv.Charset(cs), false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,10 +90,13 @@ func strout(cs, str string) {
 
 func output(out io.Writer) {
 	if strings.Compare(config.inputCode, "hex") == 0 {
-		b, _ := bufio.NewReader(io.LimitReader(serialPort, 16)).Peek(16)
-		_, err = fmt.Fprintf(out, "% X %q \n", b, b)
+		b := make([]byte, 16)
+		r, _ := io.LimitReader(serialPort, 16).Read(b)
+		if r != 0 {
+			strout(out, config.outputCode, fmt.Sprintf("% X %q \n", b, b))
+		}
 	} else {
-		err = charsetconv.ConvertWith(io.LimitReader(serialPort, 1024), charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
+		err = charsetconv.ConvertWith(serialPort, charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -116,20 +126,29 @@ func main() {
 		}
 	}(serialPort)
 
-	go input()
+	if FoeWardMode(config.forWard) != NOT {
+		conn := setForWard()
+		ins = append(ins, conn)
+		outs = append(outs, conn)
+		defer conn.Close()
+	}
+
+	if len(ins) != 1 {
+		in = io.MultiReader(ins...)
+	}
+	go input(in)
 
 	if config.enableLog {
 		f, err := os.OpenFile(config.logFilePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
-		out := io.MultiWriter(os.Stdout, f)
-		for {
-			output(out)
-		}
-	} else {
-		for {
-			output(os.Stdout)
-		}
+		outs = append(outs, f)
+	}
+	if len(outs) != 1 {
+		out = io.MultiWriter(outs...)
+	}
+	for {
+		output(out)
 	}
 }

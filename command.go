@@ -20,7 +20,7 @@ func cmdhelp() {
 	var page = 0
 	fmt.Printf(">-------Help(%v)-------<\n", page)
 	for i := 0; i < len(commands); i++ {
-		strout(config.outputCode, fmt.Sprintf(" %-10v --%v\n", commands[i].name, commands[i].description))
+		strout(out, config.outputCode, fmt.Sprintf(" %-10v --%v\n", commands[i].name, commands[i].description))
 	}
 }
 func cmdexit() {
