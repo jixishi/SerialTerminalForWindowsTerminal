@@ -24,7 +24,6 @@ var (
 	out  io.Writer = os.Stdout
 	ins            = []io.Reader{os.Stdin}
 	outs           = []io.Writer{os.Stdout}
-	outn           = 1
 )
 
 func checkPortAvailability(name string) ([]string, error) {
@@ -99,7 +98,7 @@ func output() {
 			strout(out, config.outputCode, fmt.Sprintf("% X %q \n", b, b))
 		}
 	} else {
-		err = charsetconv.ConvertWith(io.LimitReader(serialPort, int64(config.frameSize*4)), charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
+		err = charsetconv.ConvertWith(serialPort, charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -131,19 +130,15 @@ func main() {
 	}(serialPort)
 
 	if FoeWardMode(config.forWard) != NOT {
-		if FoeWardMode(config.forWard) == TCPC || FoeWardMode(config.forWard) == UDPC {
-			conn := setForWardClient()
-			ins = append(ins, conn)
-			outs = append(outs, conn)
-			defer func(conn net.Conn) {
-				err := conn.Close()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}(conn)
-		} else {
-			go setForWardServer()
-		}
+		conn := setForWardClient()
+		ins = append(ins, conn)
+		outs = append(outs, conn)
+		defer func(conn net.Conn) {
+			err := conn.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(conn)
 	}
 	if len(ins) != 0 {
 		for _, reader := range ins {
@@ -157,11 +152,10 @@ func main() {
 		}
 		outs = append(outs, f)
 	}
+	if len(outs) != 1 {
+		out = io.MultiWriter(outs...)
+	}
 	for {
-		if len(outs) != outn {
-			outn = len(outs)
-			out = io.MultiWriter(outs...)
-		}
 		output()
 	}
 }
