@@ -18,7 +18,7 @@ var commands []Command
 
 func cmdhelp() {
 	var page = 0
-	fmt.Printf(">-------Help(%v)-------<\n", page)
+	strout(out, config.outputCode, fmt.Sprintf(">-------Help(%v)-------<\n", page))
 	for i := 0; i < len(commands); i++ {
 		strout(out, config.outputCode, fmt.Sprintf(" %-10v --%v\n", commands[i].name, commands[i].description))
 	}
@@ -27,12 +27,12 @@ func cmdexit() {
 	os.Exit(0)
 }
 func cmdargs() {
-	fmt.Printf(">-------Args(%v)-------<\n", len(args)-1)
-	fmt.Printf("%q\n", args[1:])
+	strout(out, config.outputCode, fmt.Sprintf(">-------Args(%v)-------<\n", len(args)-1))
+	strout(out, config.outputCode, fmt.Sprintf("%q\n", args[1:]))
 }
 func cmdhex() {
-	fmt.Printf(">-----Hex Send-----<\n")
-	fmt.Printf("%q\n", args[1:])
+	strout(out, config.outputCode, fmt.Sprintf(">-----Hex Send-----<\n"))
+	strout(out, config.outputCode, fmt.Sprintf("%q\n", args[1:]))
 	s := strings.Join(args[1:], "")
 	b, err := hex.DecodeString(s)
 	if err != nil {

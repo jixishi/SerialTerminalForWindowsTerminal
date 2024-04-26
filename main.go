@@ -8,6 +8,7 @@ import (
 	"go.bug.st/serial"
 	"io"
 	"log"
+	"net"
 	"os"
 	"strings"
 )
@@ -23,6 +24,7 @@ var (
 	out  io.Writer = os.Stdout
 	ins            = []io.Reader{os.Stdin}
 	outs           = []io.Writer{os.Stdout}
+	outn           = 1
 )
 
 func checkPortAvailability(name string) ([]string, error) {
@@ -55,7 +57,8 @@ func init() {
 func input(in io.Reader) {
 	input := bufio.NewScanner(in)
 	var ok = false
-	for input.Scan() {
+	for {
+		input.Scan()
 		ok = false
 		args = strings.Split(input.Text(), " ")
 		for _, cmd := range commands {
@@ -74,7 +77,7 @@ func input(in io.Reader) {
 				log.Fatal(err)
 			}
 		}
-		err := serialPort.Drain()
+		err = serialPort.Drain()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -88,15 +91,15 @@ func strout(out io.Writer, cs, str string) {
 	}
 }
 
-func output(out io.Writer) {
+func output() {
 	if strings.Compare(config.inputCode, "hex") == 0 {
 		b := make([]byte, 16)
-		r, _ := io.LimitReader(serialPort, 16).Read(b)
+		r, _ := io.LimitReader(serialPort, int64(config.frameSize)).Read(b)
 		if r != 0 {
 			strout(out, config.outputCode, fmt.Sprintf("% X %q \n", b, b))
 		}
 	} else {
-		err = charsetconv.ConvertWith(serialPort, charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
+		err = charsetconv.ConvertWith(io.LimitReader(serialPort, int64(config.frameSize*4)), charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -123,21 +126,30 @@ func main() {
 	defer func(port serial.Port) {
 		err := port.Close()
 		if err != nil {
+			log.Fatal(err)
 		}
 	}(serialPort)
 
 	if FoeWardMode(config.forWard) != NOT {
-		conn := setForWard()
-		ins = append(ins, conn)
-		outs = append(outs, conn)
-		defer conn.Close()
+		if FoeWardMode(config.forWard) == TCPC || FoeWardMode(config.forWard) == UDPC {
+			conn := setForWardClient()
+			ins = append(ins, conn)
+			outs = append(outs, conn)
+			defer func(conn net.Conn) {
+				err := conn.Close()
+				if err != nil {
+					log.Fatal(err)
+				}
+			}(conn)
+		} else {
+			go setForWardServer()
+		}
 	}
-
-	if len(ins) != 1 {
-		in = io.MultiReader(ins...)
+	if len(ins) != 0 {
+		for _, reader := range ins {
+			go input(reader)
+		}
 	}
-	go input(in)
-
 	if config.enableLog {
 		f, err := os.OpenFile(config.logFilePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		if err != nil {
@@ -145,10 +157,11 @@ func main() {
 		}
 		outs = append(outs, f)
 	}
-	if len(outs) != 1 {
-		out = io.MultiWriter(outs...)
-	}
 	for {
-		output(out)
+		if len(outs) != outn {
+			outn = len(outs)
+			out = io.MultiWriter(outs...)
+		}
+		output()
 	}
 }
