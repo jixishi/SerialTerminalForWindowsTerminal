@@ -30,6 +30,15 @@ func cmdargs() {
 	strout(out, config.outputCode, fmt.Sprintf(">-------Args(%v)-------<\n", len(args)-1))
 	strout(out, config.outputCode, fmt.Sprintf("%q\n", args[1:]))
 }
+func cmdctrl() {
+	b := []byte(args[1])
+	x := []byte{b[0] & 0x1f}
+	_, err = serialPort.Write(x)
+	if err != nil {
+		log.Fatal(err)
+	}
+	strout(out, config.outputCode, fmt.Sprintf("Ctrl+%s\n", b))
+}
 func cmdhex() {
 	strout(out, config.outputCode, fmt.Sprintf(">-----Hex Send-----<\n"))
 	strout(out, config.outputCode, fmt.Sprintf("%q\n", args[1:]))
@@ -45,7 +54,7 @@ func cmdhex() {
 }
 func cmdinit() {
 	commands = append(commands, Command{name: ".help", description: "帮助信息", function: cmdhelp})
-	commands = append(commands, Command{name: ".args", description: "参数信息", function: cmdargs})
+	commands = append(commands, Command{name: ".ctrl", description: "发送Ctrl组合键", function: cmdctrl})
 	commands = append(commands, Command{name: ".hex", description: "发送Hex", function: cmdhex})
 	commands = append(commands, Command{name: ".exit", description: "退出终端", function: cmdexit})
 }
