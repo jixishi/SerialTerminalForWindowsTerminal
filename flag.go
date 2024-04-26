@@ -153,7 +153,7 @@ func getCliFlag() {
 	s, _ := inf.NewSingleSelect(
 		ports,
 		singleselect.WithKeyBinding(selectKeymap),
-		singleselect.WithPageSize(3),
+		singleselect.WithPageSize(4),
 		singleselect.WithFilterInput(inputs),
 	).Display("选择串口")
 	config.portName = ports[s]
@@ -161,7 +161,7 @@ func getCliFlag() {
 	s, _ = inf.NewSingleSelect(
 		bauds,
 		singleselect.WithKeyBinding(selectKeymap),
-		singleselect.WithPageSize(3),
+		singleselect.WithPageSize(4),
 	).Display("选择波特率")
 	if s != 0 {
 		config.baudRate, _ = strconv.Atoi(bauds[s])
@@ -186,7 +186,7 @@ func getCliFlag() {
 		s, _ = inf.NewSingleSelect(
 			datas,
 			singleselect.WithKeyBinding(selectKeymap),
-			singleselect.WithPageSize(3),
+			singleselect.WithPageSize(4),
 			singleselect.WithFilterInput(inputs),
 		).Display("选择数据位")
 		config.dataBits, _ = strconv.Atoi(datas[s])
@@ -194,7 +194,7 @@ func getCliFlag() {
 		s, _ = inf.NewSingleSelect(
 			stops,
 			singleselect.WithKeyBinding(selectKeymap),
-			singleselect.WithPageSize(3),
+			singleselect.WithPageSize(4),
 			singleselect.WithFilterInput(inputs),
 		).Display("选择停止位")
 		config.stopBits = s
