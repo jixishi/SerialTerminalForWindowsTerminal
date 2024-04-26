@@ -13,6 +13,8 @@
 * [x] Hex断帧设置
 * [x] UDP数据转发
 * [x] TCP数据转发
+* [x] 参数交互配置
+* [x] Ctrl组合键
 * [ ] 文件接收发送
 
 ## 运行示例
@@ -34,3 +36,9 @@
 5. Hex发送 `./COM -p COM8 -b 115200`
 
    ![img5.png](image/img5.png)
+6. 交互配置 `./COM`
+
+   ![img6.png](image/img6.png)
+7. Ctrl组合键发送指令.ctrl `.ctrl c`
+   
+   ![img7.png](image/img7.png)

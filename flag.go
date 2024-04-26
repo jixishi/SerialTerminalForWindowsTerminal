@@ -180,7 +180,6 @@ func getCliFlag() {
 		config.inputCode = "hex"
 	}
 	v, _ = inf.NewConfirmWithSelection(
-		confirm.WithDefaultYes(),
 		confirm.WithPrompt("启用高级配置"),
 	).Display()
 	if v {
