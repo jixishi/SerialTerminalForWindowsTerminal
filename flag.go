@@ -40,9 +40,9 @@ var (
 	logFilePath = Flag{ptrVal{string: &config.logFilePath}, "P", "Path", Val{string: "./Log.txt"}, "日志保存路径"}
 	forWard     = Flag{ptrVal{int: &config.forWard}, "f", "forward", Val{int: 0}, "转发模式(0: 无 1:TCP-C 2:UDP-C)"}
 	address     = Flag{ptrVal{string: &config.address}, "a", "address", Val{string: "127.0.0.1:12345"}, "转发服务地址"}
-	frameSize   = Flag{ptrVal{int: &config.forWard}, "F", "Frame", Val{int: 16}, "帧大小"}
+	frameSize   = Flag{ptrVal{int: &config.frameSize}, "F", "Frame", Val{int: 16}, "帧大小"}
 	parityBit   = Flag{ptrVal{int: &config.parityBit}, "v", "verify", Val{int: 0}, "奇偶校验(0:无校验、1:奇校验、2:偶校验、3:1校验、4:0校验)"}
-	flags       = []Flag{portName, baudRate, dataBits, stopBits, outputCode, inputCode, endStr, enableLog, logFilePath, forWard, frameSize, address, parityBit}
+	flags       = []Flag{portName, baudRate, dataBits, stopBits, outputCode, inputCode, endStr, enableLog, logFilePath, forWard, address, frameSize, parityBit}
 )
 
 type ValType int

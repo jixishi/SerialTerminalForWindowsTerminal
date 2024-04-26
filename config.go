@@ -32,6 +32,8 @@ var config Config
 
 func setForWardClient() (conn net.Conn) {
 	switch FoeWardMode(config.forWard) {
+	case NOT:
+
 	case TCPC:
 		conn, err = net.Dial("tcp", config.address)
 		if err != nil {
