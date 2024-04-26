@@ -50,6 +50,15 @@ func init() {
 	for _, f := range flags {
 		flagInit(&f)
 	}
+	flag.Func("h", "获取帮助", func(s string) error {
+		ports, err := checkPortAvailability(s)
+		if err != nil {
+			fmt.Println(err)
+			printUsage(ports)
+			os.Exit(0)
+		}
+		return err
+	})
 	cmdinit()
 }
 
@@ -106,6 +115,10 @@ func output() {
 }
 func main() {
 	flag.Parse()
+
+	if config.portName == "" {
+		getCliFlag()
+	}
 	ports, err := checkPortAvailability(config.portName)
 	if err != nil {
 		fmt.Println(err)
