@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"os"
 )
 
 type Config struct {
@@ -18,6 +19,8 @@ type Config struct {
 	logFilePath string
 	forWard     int
 	frameSize   int
+	timesTamp   bool
+	timesFmt    string
 	address     string
 }
 type FoeWardMode int
@@ -48,4 +51,14 @@ func setForWardClient() (conn net.Conn) {
 		panic("未知模式设置")
 	}
 	return conn
+}
+
+func checkLogOpen() {
+	if config.enableLog {
+		f, err := os.OpenFile(config.logFilePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		outs = append(outs, f)
+	}
 }

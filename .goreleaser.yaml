@@ -23,6 +23,11 @@ builds:
       - linux
       - windows
       - darwin
+    ldflags:
+      - -s -w
+    hooks:
+      post:
+        - upx "{{ .Path }}"
 
 archives:
   - format: tar.gz

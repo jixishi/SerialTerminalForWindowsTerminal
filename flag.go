@@ -53,8 +53,10 @@ var (
 	forWard     = Flag{ptrVal{int: &config.forWard}, "f", "forward", Val{int: 0}, "转发模式(0: 无 1:TCP-C 2:UDP-C)"}
 	address     = Flag{ptrVal{string: &config.address}, "a", "address", Val{string: "127.0.0.1:12345"}, "转发服务地址"}
 	frameSize   = Flag{ptrVal{int: &config.frameSize}, "F", "Frame", Val{int: 16}, "帧大小"}
+	timesTamp   = Flag{ptrVal{bool: &config.timesTamp}, "t", "tamp", Val{bool: false}, "是否启用接收时间戳"}
+	timesFmt    = Flag{ptrVal{string: &config.timesFmt}, "T", "TimeFmt", Val{string: "[06-01-02 15:04:05]"}, "时间戳格式化字段"}
 	parityBit   = Flag{ptrVal{int: &config.parityBit}, "v", "verify", Val{int: 0}, "奇偶校验(0:无校验、1:奇校验、2:偶校验、3:1校验、4:0校验)"}
-	flags       = []Flag{portName, baudRate, dataBits, stopBits, outputCode, inputCode, endStr, enableLog, logFilePath, forWard, address, frameSize, parityBit}
+	flags       = []Flag{portName, baudRate, dataBits, stopBits, outputCode, inputCode, endStr, enableLog, logFilePath, forWard, address, frameSize, timesTamp, timesFmt, parityBit}
 )
 
 var (
@@ -178,6 +180,24 @@ func getCliFlag() {
 	).Display()
 	if v {
 		config.inputCode = "hex"
+		b, _ := inf.NewText(
+			text.WithPrompt("Frames:"),
+			text.WithPromptStyle(theme.DefaultTheme.PromptStyle),
+			text.WithDefaultValue("16"),
+		).Display()
+		config.frameSize, _ = strconv.Atoi(b)
+	}
+	v, _ = inf.NewConfirmWithSelection(
+		confirm.WithPrompt("启用时间戳"),
+	).Display()
+	if v {
+		config.inputCode = "hex"
+		b, _ := inf.NewText(
+			text.WithPrompt("Frames:"),
+			text.WithPromptStyle(theme.DefaultTheme.PromptStyle),
+			text.WithDefaultValue("16"),
+		).Display()
+		config.frameSize, _ = strconv.Atoi(b)
 	}
 	v, _ = inf.NewConfirmWithSelection(
 		confirm.WithPrompt("启用高级配置"),
