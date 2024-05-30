@@ -4,13 +4,18 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/trzsz/trzsz-go/trzsz"
 	"github.com/zimolab/charsetconv"
 	"go.bug.st/serial"
+	"golang.org/x/term"
 	"io"
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"runtime"
 	"strings"
+	"time"
 )
 
 var (
@@ -20,10 +25,15 @@ var (
 )
 
 var (
-	in   io.Reader = os.Stdin
-	out  io.Writer = os.Stdout
-	ins            = []io.Reader{os.Stdin}
-	outs           = []io.Writer{os.Stdout}
+	in          io.Reader = os.Stdin
+	out         io.Writer = os.Stdout
+	ins                   = []io.Reader{os.Stdin}
+	outs                  = []io.Writer{os.Stdout}
+	trzszFilter *trzsz.TrzszFilter
+	clientIn    *io.PipeReader
+	stdoutPipe  *io.PipeReader
+	stdinPipe   *io.PipeWriter
+	clientOut   *io.PipeWriter
 )
 
 func checkPortAvailability(name string) ([]string, error) {
@@ -50,15 +60,6 @@ func init() {
 	for _, f := range flags {
 		flagInit(&f)
 	}
-	flag.Func("h", "获取帮助", func(s string) error {
-		ports, err := checkPortAvailability(s)
-		if err != nil {
-			fmt.Println(err)
-			printUsage(ports)
-			os.Exit(0)
-		}
-		return err
-	})
 	cmdinit()
 }
 
@@ -76,11 +77,11 @@ func input(in io.Reader) {
 			}
 		}
 		if !ok {
-			_, err := io.WriteString(serialPort, input.Text())
+			_, err := io.WriteString(stdinPipe, input.Text())
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = io.WriteString(serialPort, config.endStr)
+			_, err = io.WriteString(stdinPipe, config.endStr)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -101,13 +102,24 @@ func strout(out io.Writer, cs, str string) {
 
 func output() {
 	if strings.Compare(config.inputCode, "hex") == 0 {
-		b := make([]byte, 16)
-		r, _ := io.LimitReader(serialPort, int64(config.frameSize)).Read(b)
+		b := make([]byte, config.frameSize)
+		r, _ := io.LimitReader(stdoutPipe, int64(config.frameSize)).Read(b)
 		if r != 0 {
-			strout(out, config.outputCode, fmt.Sprintf("% X %q \n", b, b))
+			if config.timesTamp {
+				strout(out, config.outputCode, fmt.Sprintf("%v % X %q \n", time.Now().Format(config.timesFmt), b, b))
+			} else {
+				strout(out, config.outputCode, fmt.Sprintf("% X %q \n", b, b))
+			}
 		}
 	} else {
-		err = charsetconv.ConvertWith(serialPort, charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
+		if config.timesTamp {
+			line, _, _ := bufio.NewReader(stdoutPipe).ReadLine()
+			if line != nil {
+				strout(out, config.outputCode, fmt.Sprintf("%v %s\n", time.Now().Format(config.timesFmt), line))
+			}
+		} else {
+			err = charsetconv.ConvertWith(stdoutPipe, charsetconv.Charset(config.inputCode), out, charsetconv.Charset(config.outputCode), false)
+		}
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -115,7 +127,6 @@ func output() {
 }
 func main() {
 	flag.Parse()
-
 	if config.portName == "" {
 		getCliFlag()
 	}
@@ -141,6 +152,33 @@ func main() {
 			log.Fatal(err)
 		}
 	}(serialPort)
+	fd := int(os.Stdin.Fd())
+	width, _, err := term.GetSize(fd)
+	if err != nil {
+		if runtime.GOOS != "windows" {
+			fmt.Printf("term get size failed: %s\n", err)
+			return
+		}
+		width = 80
+	}
+
+	clientIn, stdinPipe = io.Pipe()
+	stdoutPipe, clientOut = io.Pipe()
+	trzszFilter = trzsz.NewTrzszFilter(clientIn, clientOut, serialPort, serialPort,
+		trzsz.TrzszOptions{TerminalColumns: int32(width), EnableZmodem: true})
+	trzsz.SetAffectedByWindows(false)
+	ch := make(chan os.Signal, 1)
+	go func() {
+		for range ch {
+			width, _, err := term.GetSize(fd)
+			if err != nil {
+				fmt.Printf("term get size failed: %s\n", err)
+				continue
+			}
+			trzszFilter.SetTerminalColumns(int32(width))
+		}
+	}()
+	defer func() { signal.Stop(ch); close(ch) }()
 
 	if FoeWardMode(config.forWard) != NOT {
 		conn := setForWardClient()
@@ -153,17 +191,12 @@ func main() {
 			}
 		}(conn)
 	}
+	checkLogOpen()
+
 	if len(ins) != 0 {
 		for _, reader := range ins {
 			go input(reader)
 		}
-	}
-	if config.enableLog {
-		f, err := os.OpenFile(config.logFilePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-		if err != nil {
-			log.Fatal(err)
-		}
-		outs = append(outs, f)
 	}
 	if len(outs) != 1 {
 		out = io.MultiWriter(outs...)

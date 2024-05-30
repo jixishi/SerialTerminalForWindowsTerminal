@@ -15,7 +15,7 @@
 * [x] TCP数据转发
 * [x] 参数交互配置
 * [x] Ctrl组合键
-* [ ] 文件接收发送
+* [x] 文件接收发送(trzsz lrzsz都支持)
 
 ## 运行示例
 
@@ -42,3 +42,5 @@
 7. Ctrl组合键发送指令.ctrl `.ctrl c`
    
    ![img7.png](image/img7.png)
+8. 文件上传演示 `index.html`
+   ![img8.png](image/img8.png)
