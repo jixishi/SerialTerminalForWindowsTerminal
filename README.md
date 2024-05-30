@@ -44,3 +44,7 @@
    ![img7.png](image/img7.png)
 8. 文件上传演示 `index.html`
    ![img8.png](image/img8.png)
+9. 时间戳 `./COM -p COM8 -t`
+   ![img9.png](image/img9.png)
+10. 格式修改 `./COM -p COM11 -t -T='<2006-01-02 15:04:05>'`
+    ![img10.png](image/img10.png)
