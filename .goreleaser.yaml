@@ -25,9 +25,13 @@ builds:
       - darwin
     ldflags:
       - -s -w
-    hooks:
-      post:
-        - upx "{{ .Path }}"
+
+upx:
+  - enabled: true
+    goos:
+      - windows
+    goarch:
+      - amd64
 
 archives:
   - format: tar.gz
