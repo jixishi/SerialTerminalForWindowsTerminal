@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
+	"github.com/spf13/pflag"
 	"github.com/trzsz/trzsz-go/trzsz"
 	"github.com/zimolab/charsetconv"
 	"go.bug.st/serial"
@@ -126,7 +126,8 @@ func output() {
 	}
 }
 func main() {
-	flag.Parse()
+	pflag.Parse()
+	flagExt()
 	if config.portName == "" {
 		getCliFlag()
 	}

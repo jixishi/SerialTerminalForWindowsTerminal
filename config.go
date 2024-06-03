@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
 type Config struct {
@@ -55,7 +57,8 @@ func setForWardClient() (conn net.Conn) {
 
 func checkLogOpen() {
 	if config.enableLog {
-		f, err := os.OpenFile(config.logFilePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+		path := fmt.Sprintf(config.logFilePath, config.portName, time.Now().Format("2006_01_02T150405"))
+		f, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
