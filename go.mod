@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/fzdwx/infinite v0.12.1
+	github.com/gobwas/ws v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/trzsz/trzsz-go v1.1.7
 	github.com/zimolab/charsetconv v0.1.2
@@ -27,6 +28,8 @@ require (
 	github.com/dchest/jsmin v0.0.0-20220218165748-59f39799265f // indirect
 	github.com/duke-git/lancet/v2 v2.2.1 // indirect
 	github.com/fzdwx/iter v0.0.0-20230511075109-0afee9319312 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect

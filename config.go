@@ -19,11 +19,11 @@ type Config struct {
 	endStr      string
 	enableLog   bool
 	logFilePath string
-	forWard     int
+	forWard     []int
 	frameSize   int
 	timesTamp   bool
 	timesFmt    string
-	address     string
+	address     []string
 }
 type FoeWardMode int
 
@@ -35,17 +35,18 @@ const (
 
 var config Config
 
-func setForWardClient() (conn net.Conn) {
-	switch FoeWardMode(config.forWard) {
+func setForWardClient(mode FoeWardMode, add string) (conn net.Conn) {
+	var err error
+	switch mode {
 	case NOT:
 
 	case TCPC:
-		conn, err = net.Dial("tcp", config.address)
+		conn, err = net.Dial("tcp", add)
 		if err != nil {
 			log.Fatal(err)
 		}
 	case UDPC:
-		conn, err = net.Dial("udp", config.address)
+		conn, err = net.Dial("udp", add)
 		if err != nil {
 			log.Fatal(err)
 		}

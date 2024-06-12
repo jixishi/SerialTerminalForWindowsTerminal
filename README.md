@@ -11,8 +11,8 @@
 * [x] 活动端口探测
 * [x] 数据日志保存
 * [x] Hex断帧设置
-* [x] UDP数据转发
-* [x] TCP数据转发
+* [x] UDP数据转发(支持多服)
+* [x] TCP数据转发(支持多服)
 * [x] 参数交互配置
 * [x] Ctrl组合键
 * [x] 文件接收发送(trzsz lrzsz都支持)
@@ -50,3 +50,5 @@
    ![img9.png](image/img9.png)
 10. 格式修改 `./COM -p COM11 -t='<2006-01-02 15:04:05>'`
     ![img10.png](image/img10.png)
+11. 多服同步转发 `./COM -p COM11 -f 1 -a 127.0.0.1:23456 -f 1 -a 127.0.0.1:23457`
+   ![img12.png](image/img12.png)

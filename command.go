@@ -14,7 +14,10 @@ type Command struct {
 	function    func()
 }
 
-var commands []Command
+var (
+	commands []Command
+	args     []string
+)
 
 func cmdhelp() {
 	var page = 0
@@ -24,6 +27,8 @@ func cmdhelp() {
 	}
 }
 func cmdexit() {
+	CloseTrzsz()
+	CloseSerial()
 	os.Exit(0)
 }
 func cmdargs() {
@@ -31,12 +36,11 @@ func cmdargs() {
 	strout(out, config.outputCode, fmt.Sprintf("%q\n", args[1:]))
 }
 func cmdctrl() {
+	var err error
 	b := []byte(args[1])
 	x := []byte{b[0] & 0x1f}
 	_, err = serialPort.Write(x)
-	if err != nil {
-		log.Fatal(err)
-	}
+	ErrorF(err)
 	strout(out, config.outputCode, fmt.Sprintf("Ctrl+%s\n", b))
 }
 func cmdhex() {

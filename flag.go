@@ -20,7 +20,9 @@ import (
 
 type ptrVal struct {
 	*string
+	sl *[]string
 	*int
+	il *[]int
 	*bool
 	*float64
 	*float32
@@ -52,8 +54,8 @@ var (
 	endStr     = Flag{ptrVal{string: &config.endStr}, "e", "end", Val{string: "\n"}, "终端换行符"}
 	logExt     = Flag{v: ptrVal{ext: &config.logFilePath}, sStr: "l", lStr: "log", dv: Val{extdef: "./%s-$s.txt", string: ""}, help: "日志保存路径"}
 	timeExt    = Flag{v: ptrVal{ext: &config.timesFmt}, sStr: "t", lStr: "time", dv: Val{extdef: "[06-01-02 15:04:05.000]", string: ""}, help: "时间戳格式化字段"}
-	forWard    = Flag{ptrVal{int: &config.forWard}, "f", "forward", Val{int: 0}, "转发模式(0: 无 1:TCP-C 2:UDP-C)"}
-	address    = Flag{ptrVal{string: &config.address}, "a", "address", Val{string: "127.0.0.1:12345"}, "转发服务地址"}
+	forWard    = Flag{ptrVal{il: &config.forWard}, "f", "forward", Val{int: 0}, "转发模式(0: 无 1:TCP-C 2:UDP-C 支持多次传入)"}
+	address    = Flag{ptrVal{sl: &config.address}, "a", "address", Val{string: "127.0.0.1:12345"}, "转发服务地址(支持多次传入)"}
 	frameSize  = Flag{ptrVal{int: &config.frameSize}, "F", "Frame", Val{int: 16}, "帧大小"}
 	parityBit  = Flag{ptrVal{int: &config.parityBit}, "v", "verify", Val{int: 0}, "奇偶校验(0:无校验、1:奇校验、2:偶校验、3:1校验、4:0校验)"}
 	flags      = []Flag{portName, baudRate, dataBits, stopBits, outputCode, inputCode, endStr, forWard, address, frameSize, parityBit, logExt, timeExt}
@@ -128,6 +130,12 @@ func flagInit(f *Flag) {
 	if f.v.ext != nil {
 		pflag.StringVarP(f.v.ext, f.lStr, f.sStr, f.dv.string, f.help)
 		pflag.Lookup(f.lStr).NoOptDefVal = f.dv.extdef
+	}
+	if f.v.sl != nil {
+		pflag.StringArrayVarP(f.v.sl, f.lStr, f.sStr, []string{f.dv.string}, f.help)
+	}
+	if f.v.il != nil {
+		pflag.IntSliceVarP(f.v.il, f.lStr, f.sStr, []int{f.dv.int}, f.help)
 	}
 }
 func flagExt() {
@@ -209,7 +217,7 @@ func getCliFlag() {
 		b, _ := inf.NewText(
 			text.WithPrompt("格式化字段:"),
 			text.WithPromptStyle(theme.DefaultTheme.PromptStyle),
-			text.WithDefaultValue(logExt.dv.extdef),
+			text.WithDefaultValue(timeExt.dv.extdef),
 		).Display()
 		config.timesFmt = b
 	}
@@ -268,7 +276,7 @@ func getCliFlag() {
 			).Display()
 			config.outputCode = t
 		}
-
+	G_F_mode:
 		s, _ = inf.NewSingleSelect(
 			forwards,
 			singleselect.WithKeyBinding(selectKeymap),
@@ -276,13 +284,14 @@ func getCliFlag() {
 			singleselect.WithFilterInput(inputs),
 		).Display("选择转发模式")
 		if s != 0 {
-			config.forWard = s
+			config.forWard = append(config.forWard, s)
 			t, _ = inf.NewText(
 				text.WithPrompt("地址:"),
 				text.WithPromptStyle(theme.DefaultTheme.PromptStyle),
 				text.WithDefaultValue(address.dv.string),
 			).Display()
-			config.address = t
+			config.address = append(config.address, t)
+			goto G_F_mode
 		}
 
 		e, _ := inf.NewConfirmWithSelection(
